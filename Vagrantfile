@@ -21,7 +21,8 @@ $MEMSIZE=1024
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  # The ordering of these 2 lines expresses a preference for a hypervisor
+  # The ordering of these 3 lines expresses a preference for a provider; use docker if available or a vm hypervisor
+  config.vm.provider "docker"
   config.vm.provider "virtualbox"
   config.vm.provider "vmware_fusion"
 
@@ -33,17 +34,27 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # build_master
   config.vm.define :build_master, primary: true, autostart: true do |build_master|
-    build_master.vm.box = "redesign/centos7"
-    build_master.vm.box_check_update = false
     build_master.vm.synced_folder ".", "/vagrant", id: "vagrant-root"
     build_master.vm.network "private_network", ip: "192.168.10.28", :netmask => "255.255.255.0",  auto_config: true
     build_master.vm.network "forwarded_port", id: 'ssh', guest: 22, host: 2228, auto_correct: false
 #    build_master.vm.network "forwarded_port", guest: 443, host: 8443, auto_correct: true
     build_master.vm.provision "shell", inline: "ifup enp0s8", run: "always"
+    build_master.vm.provider "docker" do |d|
+      d.image = "centos:7"
+     # d.build_dir = "."
+      d.name = "build_master"
+      d.has_ssh = true
+    end
     build_master.vm.provider "virtualbox" do |vb|
+      vb.box = "redesign/centos7"
+      vb.box_check_update = false
       vb.customize ["modifyvm", :id, "--memory", "8192", "--natnet1", "172.16.1/24"]
       vb.gui = false
       vb.name = "build_master"
+    end
+    build_master.vm.provider "vmware_fusion" do |vmw|
+      vmw.box = "redesign/centos7"
+      vmw.box_check_update = false
     end
     build_master.vm.provision "ansible_local" do |ansible|
       ansible.playbook = "/vagrant/provision.yml"
@@ -56,30 +67,52 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.define :centos6, autostart: false do |centos6|
-    centos6.vm.box = "dockpack/centos6"
-    centos6.vm.box_check_update = false
-    centos6.vbguest.auto_update = false
     centos6.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
     centos6.vm.network "private_network", ip: "192.168.10.16", :netmask => "255.255.255.0",  auto_config: true
     centos6.vm.network "forwarded_port", id: 'ssh', guest: 22, host: 2216, auto_correct: false
+    centos6.vm.provider "docker" do |d|
+      d.image = "centos:6"
+     # d.build_dir = "."
+      d.name = "centos6"
+      d.has_ssh = true
+    end
     centos6.vm.provider "virtualbox" do |vb|
+      vb.box = "dockpack/centos6"
+      vb.box_check_update = false
+      vb.vbguest.auto_update = false
       vb.customize ["modifyvm", :id, "--memory", "512", "--natnet1", "172.16.1/24"]
       vb.gui = false
       vb.name = "centos6"
     end
+    centos6.vm.provider "vmware_fusion" do |vmw|
+      vmw.box = "dockpack/centos6"
+      vmw.box_check_update = false
+      vmw.vbguest.auto_update = false
+    end
   end
 
   config.vm.define :centos7, autostart: false do |centos7|
-    centos7.vm.box = "redesign/centos7"
-    centos7.vm.box_check_update = false
-    centos7.vbguest.auto_update = false
     centos7.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
     centos7.vm.network "private_network", ip: "192.168.10.17", :netmask => "255.255.255.0",  auto_config: true
     centos7.vm.network "forwarded_port", id: 'ssh', guest: 22, host: 2217, auto_correct: false
+    centos7.vm.provider "docker" do |d|
+      d.image = "centos:7"
+     # d.build_dir = "."
+      d.name = "centos7"
+      d.has_ssh = true
+    end
     centos7.vm.provider "virtualbox" do |vb|
+      vb.box = "redesign/centos7"
+      vb.box_check_update = false
+      vb.vbguest.auto_update = false
       vb.customize ["modifyvm", :id, "--memory", "2048", "--natnet1", "172.16.1/24"]
       vb.gui = false
       vb.name = "centos7"
+    end
+    centos7.vm.provider "vmware_fusion" do |vmw|
+      vmw.box = "redesign/centos7"
+      vmw.box_check_update = false
+      vmw.vbguest.auto_update = false
     end
   end
 
